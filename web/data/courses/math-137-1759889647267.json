@@ -7,85 +7,100 @@
       "name": "Quiz 1",
       "category": "Quizzes",
       "max": 100,
-      "weight": 7.14
+      "weight": 2
     },
     {
       "id": "assessment-2",
       "name": "Quiz 2",
       "category": "Quizzes",
       "max": 100,
-      "weight": 7.14
+      "weight": 2
     },
     {
       "id": "assessment-3",
       "name": "Quiz 3",
       "category": "Quizzes",
       "max": 100,
-      "weight": 7.14
+      "weight": 2
     },
     {
       "id": "assessment-4",
       "name": "Quiz 4",
       "category": "Quizzes",
       "max": 100,
-      "weight": 7.14
+      "weight": 2
     },
     {
       "id": "assessment-5",
       "name": "Quiz 5",
       "category": "Quizzes",
       "max": 100,
-      "weight": 7.14
+      "weight": 2
     },
     {
       "id": "assessment-6",
       "name": "Quiz 6",
       "category": "Quizzes",
       "max": 100,
-      "weight": 7.14
+      "weight": 2
     },
     {
       "id": "assessment-7",
       "name": "Quiz 7",
       "category": "Quizzes",
       "max": 100,
-      "weight": 7.14
+      "weight": 2
     },
     {
       "id": "assessment-8",
       "name": "Quiz 8",
       "category": "Quizzes",
       "max": 100,
-      "weight": 7.14
+      "weight": 2
     },
     {
       "id": "assessment-9",
       "name": "Quiz 9",
       "category": "Quizzes",
       "max": 100,
-      "weight": 7.14
+      "weight": 2
     },
     {
       "id": "assessment-10",
       "name": "Quiz 10",
       "category": "Quizzes",
       "max": 100,
-      "weight": 7.14
+      "weight": 2
     },
     {
       "id": "assessment-11",
       "name": "Midterm Exam",
       "category": "Exams",
       "max": 100,
-      "weight": 10.71
+      "weight": 30
     },
     {
       "id": "assessment-12",
       "name": "Final Exam",
       "category": "Exams",
       "max": 100,
-      "weight": 17.86
+      "weight": 50
     }
   ],
-  "createdAt": "2025-10-08T02:14:12.509Z"
+  "createdAt": "2025-10-08T02:14:12.509Z",
+  "updatedAt": "2025-10-08T02:31:39.067Z",
+  "grades": {
+    "assessment-2": {
+      "earned": 15,
+      "max": 20
+    },
+    "assessment-3": {
+      "earned": 19,
+      "max": 22
+    },
+    "assessment-4": {
+      "earned": 10,
+      "max": 18
+    }
+  }
 }

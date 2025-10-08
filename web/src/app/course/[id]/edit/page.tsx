@@ -15,9 +15,12 @@ import {
   NumberInput, 
   Select,
   ActionIcon,
-  Table
+  Table,
+  Badge,
+  Divider,
+  Tooltip
 } from '@mantine/core';
-import { IconAlertCircle, IconPlus, IconTrash, IconArrowLeft } from '@tabler/icons-react';
+import { IconAlertCircle, IconPlus, IconTrash, IconArrowLeft, IconBrain, IconInfoCircle } from '@tabler/icons-react';
 import { Assessment } from '@/components/Calculator';
 
 interface Course {
@@ -141,6 +144,13 @@ export default function EditCoursePage() {
 
   const categories = Array.from(new Set(assessments.map(a => a.category)));
 
+  const getTotalWeight = (assessments: any[]) => {
+    return assessments.reduce((sum, assessment) => sum + assessment.weight, 0);
+  };
+
+  const totalWeight = getTotalWeight(assessments);
+  const isWeightValid = totalWeight === 100;
+
   return (
     <Stack gap="xl">
       <Group justify="space-between" align="center">
@@ -160,16 +170,33 @@ export default function EditCoursePage() {
           <Button variant="subtle" onClick={() => router.back()}>
             Cancel
           </Button>
-          <Button onClick={saveCourse} loading={saving}>
+          <Button onClick={saveCourse} loading={saving} disabled={!isWeightValid}>
             Save Changes
           </Button>
         </Group>
       </Group>
 
+      <Alert color="blue" variant="light" icon={<IconBrain size={16} />}>
+        <Text size="sm">
+          <strong>AI-Generated Assessments:</strong> These assessments were automatically extracted from your course outline. 
+          You can edit names, categories, weights, and maximum points to match your actual course requirements.
+        </Text>
+      </Alert>
+
       <Card withBorder padding="lg">
         <Stack gap="md">
           <Group justify="space-between" align="center">
-            <Title order={4}>Assessments</Title>
+            <Group gap="sm">
+              <Title order={4}>Assessments</Title>
+              <Badge variant="light" color={isWeightValid ? "green" : "orange"}>
+                {totalWeight.toFixed(1)}% total weight
+              </Badge>
+              {!isWeightValid && (
+                <Tooltip label="Total weight should equal 100% for accurate grade calculations">
+                  <IconInfoCircle size={16} color="orange" />
+                </Tooltip>
+              )}
+            </Group>
             <Button
               leftSection={<IconPlus size={16} />}
               onClick={addAssessment}
@@ -178,6 +205,15 @@ export default function EditCoursePage() {
               Add Assessment
             </Button>
           </Group>
+
+          {!isWeightValid && (
+            <Alert color="yellow" variant="light">
+              <Text size="sm">
+                <strong>Weight Adjustment Needed:</strong> Total weight is {totalWeight.toFixed(1)}%. 
+                Adjust individual weights so they add up to 100% for accurate grade calculations.
+              </Text>
+            </Alert>
+          )}
 
           <Table>
             <Table.Thead>
@@ -197,6 +233,7 @@ export default function EditCoursePage() {
                       value={assessment.name}
                       onChange={(e) => updateAssessment(assessment.id, 'name', e.target.value)}
                       size="sm"
+                      placeholder="Assessment name"
                     />
                   </Table.Td>
                   <Table.Td>
@@ -215,6 +252,7 @@ export default function EditCoursePage() {
                         return newCategory;
                       }}
                       size="sm"
+                      placeholder="Category"
                     />
                   </Table.Td>
                   <Table.Td>
@@ -223,6 +261,7 @@ export default function EditCoursePage() {
                       onChange={(value) => updateAssessment(assessment.id, 'max', Number(value))}
                       min={1}
                       size="sm"
+                      placeholder="Max points"
                     />
                   </Table.Td>
                   <Table.Td>
@@ -232,6 +271,7 @@ export default function EditCoursePage() {
                       min={0}
                       max={100}
                       size="sm"
+                      placeholder="Weight %"
                     />
                   </Table.Td>
                   <Table.Td>
@@ -248,9 +288,30 @@ export default function EditCoursePage() {
             </Table.Tbody>
           </Table>
 
-          <Text size="sm" c="dimmed">
-            Total Weight: {assessments.reduce((sum, a) => sum + a.weight, 0).toFixed(1)}%
-          </Text>
+          <Divider />
+          
+          <Group justify="space-between" align="center">
+            <Text size="sm" c="dimmed">
+              Total: {assessments.length} assessments, {totalWeight.toFixed(1)}% weight
+            </Text>
+            <Group gap="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  // Normalize weights to 100%
+                  const scaleFactor = 100 / totalWeight;
+                  setAssessments(prev => prev.map(a => ({
+                    ...a,
+                    weight: Math.round(a.weight * scaleFactor * 100) / 100
+                  })));
+                }}
+                disabled={totalWeight === 0}
+              >
+                Normalize to 100%
+              </Button>
+            </Group>
+          </Group>
         </Stack>
       </Card>
     </Stack>

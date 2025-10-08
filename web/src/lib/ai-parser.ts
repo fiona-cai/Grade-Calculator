@@ -46,16 +46,27 @@ For each assessment, provide:
 - max: Maximum points possible (default to 100 if not specified)
 - weight: Percentage weight of the assessment (must be a number)
 
+IMPORTANT WEIGHT GUIDELINES:
+- Quizzes: Typically 1-5% each (if many quizzes, use 1-2% each)
+- Assignments: Typically 5-15% each
+- Midterm Exam: Typically 20-30%
+- Final Exam: Typically 30-50%
+- Projects: Typically 10-25% each
+- Labs: Typically 2-10% each
+
+Ensure the total weight adds up to 100%. If you see many quizzes (8+), use smaller weights per quiz (1-2%).
+
 Return ONLY a valid JSON array of assessment objects. Do not include any markdown formatting, code blocks, or explanations. Just return the raw JSON array.
 
 Example format:
 [
-  {"name": "Quiz 1", "category": "Quizzes", "max": 100, "weight": 5},
-  {"name": "Quiz 2", "category": "Quizzes", "max": 100, "weight": 5},
+  {"name": "Quiz 1", "category": "Quizzes", "max": 100, "weight": 2},
+  {"name": "Quiz 2", "category": "Quizzes", "max": 100, "weight": 2},
+  {"name": "Quiz 3", "category": "Quizzes", "max": 100, "weight": 2},
   {"name": "Midterm Exam", "category": "Exams", "max": 100, "weight": 30},
-  {"name": "Final Exam", "category": "Exams", "max": 100, "weight": 40},
-  {"name": "Assignment 1", "category": "Assignments", "max": 100, "weight": 10},
-  {"name": "Assignment 2", "category": "Assignments", "max": 100, "weight": 10}
+  {"name": "Final Exam", "category": "Exams", "max": 100, "weight": 50},
+  {"name": "Assignment 1", "category": "Assignments", "max": 100, "weight": 7},
+  {"name": "Assignment 2", "category": "Assignments", "max": 100, "weight": 7}
 ]
 
 Course outline text:
@@ -99,10 +110,10 @@ ${textContent}`;
       weight: Number(assessment.weight) || 0
     }));
 
-    // Ensure total weight doesn't exceed 100%
+    // Normalize weights to ensure they add up to exactly 100%
     const totalWeight = validatedAssessments.reduce((sum: number, a: any) => sum + a.weight, 0);
-    if (totalWeight > 100) {
-      // Scale down weights proportionally
+    if (totalWeight > 0 && totalWeight !== 100) {
+      // Scale weights proportionally to total 100%
       const scaleFactor = 100 / totalWeight;
       validatedAssessments.forEach((assessment: any) => {
         assessment.weight = Math.round(assessment.weight * scaleFactor * 100) / 100;
@@ -201,6 +212,15 @@ async function parseCourseOutlineSimple(filePath: string, fileType: string): Pro
       { id: 'midterm', name: 'Midterm Exam', category: 'Midterm', max: 100, weight: 30 },
       { id: 'final', name: 'Final Exam', category: 'Final Exam', max: 100, weight: 50 }
     );
+  }
+  
+  // Normalize weights to ensure they add up to 100%
+  const totalWeight = assessments.reduce((sum, assessment) => sum + assessment.weight, 0);
+  if (totalWeight > 0 && totalWeight !== 100) {
+    const scaleFactor = 100 / totalWeight;
+    assessments.forEach(assessment => {
+      assessment.weight = Math.round(assessment.weight * scaleFactor * 100) / 100;
+    });
   }
   
   return assessments;

@@ -1,9 +1,10 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Stack, Title, Text, Alert, Loader, Center } from '@mantine/core';
-import { IconAlertCircle } from '@tabler/icons-react';
+import { Stack, Title, Text, Alert, Loader, Center, Button, Group, Badge } from '@mantine/core';
+import { IconAlertCircle, IconEdit, IconBrain } from '@tabler/icons-react';
 import { Calculator, Assessment } from '@/components/Calculator';
+import Link from 'next/link';
 
 interface Course {
   id: string;
@@ -74,12 +75,53 @@ export default function CoursePage() {
 
   // Extract unique categories from assessments
   const categories = Array.from(new Set(course.assessments.map(a => a.category)));
+  const totalWeight = course.assessments.reduce((sum, a) => sum + a.weight, 0);
 
   return (
-    <Calculator 
-      title={`${course.name} Grade Calculator`}
-      assessments={course.assessments}
-      categories={categories}
-    />
+    <Stack gap="xl">
+      <Group justify="space-between" align="flex-start">
+        <div>
+          <Title order={2}>{course.name} Grade Calculator</Title>
+          <Text c="dimmed" size="sm">
+            Created {new Date(course.createdAt).toLocaleDateString()}
+          </Text>
+          <Group gap="xs" mt="xs">
+            <Badge variant="light" color="blue" leftSection={<IconBrain size={12} />}>
+              AI Generated
+            </Badge>
+            <Badge variant="light" color="green">
+              {course.assessments.length} assessments
+            </Badge>
+            <Badge variant="light" color="orange">
+              {totalWeight.toFixed(0)}% total weight
+            </Badge>
+          </Group>
+        </div>
+        <Button
+          component={Link}
+          href={`/course/${courseId}/edit`}
+          leftSection={<IconEdit size={16} />}
+          variant="outline"
+        >
+          Edit Assessments
+        </Button>
+      </Group>
+
+      {totalWeight !== 100 && (
+        <Alert color="yellow" variant="light">
+          <Text size="sm">
+            <strong>Note:</strong> Total weight is {totalWeight.toFixed(1)}%. 
+            You may want to adjust the weights to equal 100% for accurate grade calculations.
+          </Text>
+        </Alert>
+      )}
+
+      <Calculator 
+        title=""
+        assessments={course.assessments}
+        categories={categories}
+        courseId={courseId}
+      />
+    </Stack>
   );
 }
