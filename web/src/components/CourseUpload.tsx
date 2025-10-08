@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -7,6 +7,7 @@ import { Label } from "./ui/label";
 import { Progress } from "./ui/progress";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Upload, File, Brain, AlertCircle, Loader2 } from "lucide-react";
+import { isLocalhost } from '@/lib/localhost';
 
 interface CourseUploadProps {
   onCourseCreated: (course: any) => void;
@@ -20,6 +21,12 @@ export function CourseUpload({ onCourseCreated }: CourseUploadProps) {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [statusMessage, setStatusMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isLocal, setIsLocal] = useState(false);
+
+  // Check if running on localhost
+  useEffect(() => {
+    setIsLocal(isLocalhost());
+  }, []);
 
   const handleFileChange = (file: File | null) => {
     setFile(file);
@@ -114,6 +121,17 @@ export function CourseUpload({ onCourseCreated }: CourseUploadProps) {
 
   return (
     <div className="space-y-6">
+      {/* Demo Mode Warning */}
+      {!isLocal && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Demo Mode:</strong> Course creation is disabled in demo mode. 
+            To create courses, please run this application on localhost.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="space-y-2">
         <Label htmlFor="courseName">Course Name</Label>
         <Input
@@ -183,7 +201,7 @@ export function CourseUpload({ onCourseCreated }: CourseUploadProps) {
 
       <Button
         onClick={handleSubmit}
-        disabled={!file || !courseName.trim() || isUploading}
+        disabled={!file || !courseName.trim() || isUploading || !isLocal}
         className="w-full bg-accent hover:bg-accent/90 text-white border-accent shadow-sm"
       >
         {isUploading ? (

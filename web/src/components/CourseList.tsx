@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { MoreHorizontal, Trash2, Edit, Calendar, Calculator } from "lucide-react";
 import Link from 'next/link';
+import { isLocalhost } from '@/lib/localhost';
 
 interface Course {
   id: string;
@@ -24,6 +25,12 @@ interface CourseListProps {
 export function CourseList({ courses, onCourseDeleted }: CourseListProps) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
+  const [isLocal, setIsLocal] = useState(false);
+
+  // Check if running on localhost
+  useEffect(() => {
+    setIsLocal(isLocalhost());
+  }, []);
 
   const handleDelete = async (courseId: string) => {
     try {
@@ -65,8 +72,12 @@ export function CourseList({ courses, onCourseDeleted }: CourseListProps) {
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
           <div className="text-center space-y-2">
-            <h3 className="text-lg font-medium text-muted-foreground">No courses uploaded yet</h3>
-            <p className="text-sm text-muted-foreground">Upload a course outline to get started</p>
+            <h3 className="text-lg font-medium text-muted-foreground">
+              {isLocal ? 'No courses uploaded yet' : 'Demo Courses Available'}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              {isLocal ? 'Upload a course outline to get started' : 'These are sample courses for demonstration purposes'}
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -97,6 +108,7 @@ export function CourseList({ courses, onCourseDeleted }: CourseListProps) {
                     <DropdownMenuItem 
                       onClick={() => openDeleteModal(course.id)}
                       className="text-destructive"
+                      disabled={!isLocal}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
                       Delete

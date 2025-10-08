@@ -1,12 +1,12 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { useSession, signOut } from 'next-auth/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, User } from "lucide-react";
+import { Plus, AlertCircle } from "lucide-react";
 import { CourseUpload } from "@/components/CourseUpload";
 import { CourseList } from "@/components/CourseList";
-import { useRouter } from 'next/navigation';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { isLocalhost } from '@/lib/localhost';
 
 interface Course {
   id: string;
@@ -17,21 +17,17 @@ interface Course {
 }
 
 export default function Home() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
   const [courses, setCourses] = useState<Course[]>([]);
   const [showUpload, setShowUpload] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isLocal, setIsLocal] = useState(false);
 
+  // Check if running on localhost
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/auth/signin");
-    }
-  }, [status, router]);
+    setIsLocal(isLocalhost());
+  }, []);
 
   const fetchCourses = async () => {
-    if (status !== "authenticated") return;
-    
     try {
       const response = await fetch('/api/courses');
       if (response.ok) {
@@ -47,7 +43,7 @@ export default function Home() {
 
   useEffect(() => {
     fetchCourses();
-  }, [status]);
+  }, []);
 
   const handleCourseCreated = (newCourse: Course) => {
     setCourses(prev => [newCourse, ...prev]);
@@ -58,47 +54,26 @@ export default function Home() {
     setCourses(prev => prev.filter(course => course.id !== courseId));
   };
 
-  if (status === "loading" || loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
-    );
-  }
-
-  if (status === "unauthenticated") {
-    return null; // Will redirect to sign in
-  }
-
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center space-y-4">
-        <div className="flex items-center justify-between">
-          <div></div>
-          <div>
-            <h1 className="text-4xl font-bold tracking-tight">Smart Grade Calculators</h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Upload your course outline and let AI automatically create a personalized grade calculator for you.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <User className="h-4 w-4" />
-              <span>{session?.user?.name || session?.user?.email}</span>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => signOut()}
-              className="flex items-center gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign Out
-            </Button>
-          </div>
-        </div>
+        <h1 className="text-4xl font-bold tracking-tight">Smart Grade Calculators</h1>
+        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          Upload your course outline and let AI automatically create a personalized grade calculator for you.
+        </p>
       </div>
+
+      {/* Demo Mode Warning */}
+      {!isLocal && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Demo Mode:</strong> You're viewing a demo version. Course creation and data storage are only available when running locally. 
+            To use all features, please run this application on localhost.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Upload Section */}
       <Card>
@@ -112,7 +87,8 @@ export default function Home() {
           {!showUpload ? (
             <Button 
               onClick={() => setShowUpload(true)}
-              className="w-full bg-accent hover:bg-accent/90 text-white border-accent shadow-sm h-12 text-lg"
+              disabled={!isLocal}
+              className="w-full bg-accent hover:bg-accent/90 text-white border-accent shadow-sm h-12 text-lg disabled:opacity-50"
             >
               <Plus className="h-5 w-5 mr-2" />
               Add New Course

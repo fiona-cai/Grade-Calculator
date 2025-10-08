@@ -1,79 +1,89 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/db';
-import { put } from '@vercel/blob';
+import fs from 'fs';
+import path from 'path';
 import { parseCourseOutlineWithAI } from '@/lib/ai-parser';
+import { isLocalhost, getDemoCourses } from '@/lib/localhost';
+
+const COURSES_DIR = path.join(process.cwd(), 'data', 'courses');
+
+// Ensure courses directory exists
+if (!fs.existsSync(COURSES_DIR)) {
+  fs.mkdirSync(COURSES_DIR, { recursive: true });
+}
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // If not localhost, return demo data
+    if (!isLocalhost()) {
+      return NextResponse.json(getDemoCourses());
     }
 
-    const courses = await prisma.course.findMany({
-      where: {
-        user: {
-          email: session.user.email
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
+    const courses = [];
+    const files = fs.readdirSync(COURSES_DIR);
+    
+    for (const file of files) {
+      if (file.endsWith('.json')) {
+        const courseData = JSON.parse(fs.readFileSync(path.join(COURSES_DIR, file), 'utf8'));
+        courses.push({
+          id: file.replace('.json', ''),
+          ...courseData
+        });
       }
-    });
-
+    }
+    
     return NextResponse.json(courses);
   } catch (error) {
-    console.error('Error fetching courses:', error);
     return NextResponse.json({ error: 'Failed to fetch courses' }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // If not localhost, return demo course
+    if (!isLocalhost()) {
+      const demoCourse = getDemoCourses()[0];
+      return NextResponse.json(demoCourse);
     }
 
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const courseName = formData.get('courseName') as string;
-
+    
     if (!file || !courseName) {
-      return NextResponse.json({ error: 'Missing file or course name' }, { status: 400 });
+      return NextResponse.json({ error: 'File and course name are required' }, { status: 400 });
     }
-
-    // Upload file to Vercel Blob
-    const blob = await put(file.name, file, {
-      access: 'public',
+    
+    // Generate unique course ID
+    const courseId = courseName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const timestamp = Date.now();
+    const uniqueId = `${courseId}-${timestamp}`;
+    
+    // Save file
+    const fileExtension = file.name.split('.').pop();
+    const fileName = `${uniqueId}.${fileExtension}`;
+    const filePath = path.join(COURSES_DIR, fileName);
+    
+    const bytes = await file.arrayBuffer();
+    fs.writeFileSync(filePath, Buffer.from(bytes));
+    
+    // Parse course outline using AI
+    const assessments = await parseCourseOutlineWithAI(filePath, file.type);
+    
+    // Save course data
+    const courseData = {
+      name: courseName,
+      fileName: fileName,
+      assessments: assessments,
+      createdAt: new Date().toISOString()
+    };
+    
+    const courseFilePath = path.join(COURSES_DIR, `${uniqueId}.json`);
+    fs.writeFileSync(courseFilePath, JSON.stringify(courseData, null, 2));
+    
+    return NextResponse.json({ 
+      id: uniqueId, 
+      ...courseData 
     });
-
-    // Parse course outline
-    const assessments = await parseCourseOutlineWithAI(file);
-
-    // Get user from database
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    // Save course to database
-    const course = await prisma.course.create({
-      data: {
-        name: courseName,
-        fileName: file.name,
-        fileUrl: blob.url,
-        assessments: assessments,
-        userId: user.id,
-      },
-    });
-
-    return NextResponse.json(course);
   } catch (error) {
     console.error('Error creating course:', error);
     return NextResponse.json({ error: 'Failed to create course' }, { status: 500 });
