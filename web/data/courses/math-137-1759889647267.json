@@ -1,0 +1,91 @@
+{
+  "name": "MATH 137",
+  "fileName": "math-137-1759889647267.html",
+  "assessments": [
+    {
+      "id": "assessment-1",
+      "name": "Quiz 1",
+      "category": "Quizzes",
+      "max": 100,
+      "weight": 7.14
+    },
+    {
+      "id": "assessment-2",
+      "name": "Quiz 2",
+      "category": "Quizzes",
+      "max": 100,
+      "weight": 7.14
+    },
+    {
+      "id": "assessment-3",
+      "name": "Quiz 3",
+      "category": "Quizzes",
+      "max": 100,
+      "weight": 7.14
+    },
+    {
+      "id": "assessment-4",
+      "name": "Quiz 4",
+      "category": "Quizzes",
+      "max": 100,
+      "weight": 7.14
+    },
+    {
+      "id": "assessment-5",
+      "name": "Quiz 5",
+      "category": "Quizzes",
+      "max": 100,
+      "weight": 7.14
+    },
+    {
+      "id": "assessment-6",
+      "name": "Quiz 6",
+      "category": "Quizzes",
+      "max": 100,
+      "weight": 7.14
+    },
+    {
+      "id": "assessment-7",
+      "name": "Quiz 7",
+      "category": "Quizzes",
+      "max": 100,
+      "weight": 7.14
+    },
+    {
+      "id": "assessment-8",
+      "name": "Quiz 8",
+      "category": "Quizzes",
+      "max": 100,
+      "weight": 7.14
+    },
+    {
+      "id": "assessment-9",
+      "name": "Quiz 9",
+      "category": "Quizzes",
+      "max": 100,
+      "weight": 7.14
+    },
+    {
+      "id": "assessment-10",
+      "name": "Quiz 10",
+      "category": "Quizzes",
+      "max": 100,
+      "weight": 7.14
+    },
+    {
+      "id": "assessment-11",
+      "name": "Midterm Exam",
+      "category": "Exams",
+      "max": 100,
+      "weight": 10.71
+    },
+    {
+      "id": "assessment-12",
+      "name": "Final Exam",
+      "category": "Exams",
+      "max": 100,
+      "weight": 17.86
+    }
+  ],
+  "createdAt": "2025-10-08T02:14:12.509Z"
+}
