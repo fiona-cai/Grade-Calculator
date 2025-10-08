@@ -24,7 +24,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     
     const courseData = JSON.parse(fs.readFileSync(courseFilePath, 'utf8'));
     return NextResponse.json({ id, ...courseData });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch course' }, { status: 500 });
   }
 }
@@ -56,7 +56,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     fs.writeFileSync(courseFilePath, JSON.stringify(updatedData, null, 2));
     
     return NextResponse.json({ id, ...updatedData });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to update course' }, { status: 500 });
   }
 }
@@ -91,7 +91,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     }
     
     return NextResponse.json({ message: 'Course deleted successfully' });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to delete course' }, { status: 500 });
   }
 }

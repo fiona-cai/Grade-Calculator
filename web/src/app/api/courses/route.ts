@@ -32,7 +32,7 @@ export async function GET() {
     }
     
     return NextResponse.json(courses);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch courses' }, { status: 500 });
   }
 }

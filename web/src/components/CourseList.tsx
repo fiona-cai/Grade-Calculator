@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
@@ -9,10 +9,18 @@ import { MoreHorizontal, Trash2, Edit, Calendar, Calculator } from "lucide-react
 import Link from 'next/link';
 import { isLocalhost } from '@/lib/localhost';
 
+interface Assessment {
+  id: string;
+  name: string;
+  category: string;
+  max: number;
+  weight: number;
+}
+
 interface Course {
   id: string;
   name: string;
-  assessments: any[];
+  assessments: Assessment[];
   createdAt: string;
   updatedAt?: string;
 }
@@ -63,7 +71,7 @@ export function CourseList({ courses, onCourseDeleted }: CourseListProps) {
     });
   };
 
-  const getTotalWeight = (assessments: any[]) => {
+  const getTotalWeight = (assessments: Assessment[]) => {
     return assessments.reduce((sum, assessment) => sum + assessment.weight, 0);
   };
 

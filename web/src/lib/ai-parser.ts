@@ -1,9 +1,18 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import fs from 'fs';
+import * as pdfParse from 'pdf-parse';
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '');
 
-export async function parseCourseOutlineWithAI(filePath: string, fileType: string): Promise<any[]> {
+interface Assessment {
+  id: string;
+  name: string;
+  category: string;
+  max: number;
+  weight: number;
+}
+
+export async function parseCourseOutlineWithAI(filePath: string, fileType: string): Promise<Assessment[]> {
   try {
     // Check if API key is available
     if (!process.env.GOOGLE_AI_API_KEY) {
@@ -17,7 +26,6 @@ export async function parseCourseOutlineWithAI(filePath: string, fileType: strin
     
     if (fileType === 'application/pdf') {
       // Extract text from PDF
-      const pdfParse = require('pdf-parse');
       const dataBuffer = fs.readFileSync(filePath);
       const data = await pdfParse(dataBuffer);
       textContent = data.text;
@@ -102,7 +110,7 @@ ${textContent}`;
     }
     
     // Validate and add IDs
-    const validatedAssessments = assessments.map((assessment: any, index: number) => ({
+    const validatedAssessments = assessments.map((assessment: Assessment, index: number) => ({
       id: `assessment-${index + 1}`,
       name: assessment.name || `Assessment ${index + 1}`,
       category: assessment.category || 'Assignments',
@@ -111,11 +119,11 @@ ${textContent}`;
     }));
 
     // Normalize weights to ensure they add up to exactly 100%
-    const totalWeight = validatedAssessments.reduce((sum: number, a: any) => sum + a.weight, 0);
+    const totalWeight = validatedAssessments.reduce((sum: number, a: Assessment) => sum + a.weight, 0);
     if (totalWeight > 0 && totalWeight !== 100) {
       // Scale weights proportionally to total 100%
       const scaleFactor = 100 / totalWeight;
-      validatedAssessments.forEach((assessment: any) => {
+      validatedAssessments.forEach((assessment: Assessment) => {
         assessment.weight = Math.round(assessment.weight * scaleFactor * 100) / 100;
       });
     }
@@ -135,12 +143,11 @@ ${textContent}`;
   }
 }
 
-async function parseCourseOutlineSimple(filePath: string, fileType: string): Promise<any[]> {
+async function parseCourseOutlineSimple(filePath: string, fileType: string): Promise<Assessment[]> {
   const assessments = [];
   
   if (fileType === 'application/pdf') {
     try {
-      const pdfParse = require('pdf-parse');
       const dataBuffer = fs.readFileSync(filePath);
       const data = await pdfParse(dataBuffer);
       
@@ -158,6 +165,7 @@ async function parseCourseOutlineSimple(filePath: string, fileType: string): Pro
         { regex: /project\s*[:\-\(]?\s*(\d+(?:\.\d+)?)\s*%/gi, type: 'project' }
       ];
       
+      // eslint-disable-next-line prefer-const
       let assessmentCount = { quiz: 1, assignment: 1, project: 1 };
       
       for (const pattern of patterns) {

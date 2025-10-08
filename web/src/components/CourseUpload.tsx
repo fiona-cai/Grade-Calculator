@@ -1,6 +1,5 @@
 "use client";
 import { useState, useRef, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -9,8 +8,24 @@ import { Alert, AlertDescription } from "./ui/alert";
 import { Upload, File, Brain, AlertCircle, Loader2 } from "lucide-react";
 import { isLocalhost } from '@/lib/localhost';
 
+interface Assessment {
+  id: string;
+  name: string;
+  category: string;
+  max: number;
+  weight: number;
+}
+
+interface Course {
+  id: string;
+  name: string;
+  assessments: Assessment[];
+  createdAt: string;
+  updatedAt?: string;
+}
+
 interface CourseUploadProps {
-  onCourseCreated: (course: any) => void;
+  onCourseCreated: (course: Course) => void;
 }
 
 export function CourseUpload({ onCourseCreated }: CourseUploadProps) {

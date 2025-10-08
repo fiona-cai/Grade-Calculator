@@ -8,10 +8,18 @@ import { CourseList } from "@/components/CourseList";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { isLocalhost } from '@/lib/localhost';
 
+interface Assessment {
+  id: string;
+  name: string;
+  category: string;
+  max: number;
+  weight: number;
+}
+
 interface Course {
   id: string;
   name: string;
-  assessments: any[];
+  assessments: Assessment[];
   createdAt: string;
   updatedAt?: string;
 }
@@ -69,7 +77,7 @@ export default function Home() {
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            <strong>Demo Mode:</strong> You're viewing a demo version. Course creation and data storage are only available when running locally. 
+            <strong>Demo Mode:</strong> You&apos;re viewing a demo version. Course creation and data storage are only available when running locally. 
             To use all features, please run this application on localhost.
           </AlertDescription>
         </Alert>

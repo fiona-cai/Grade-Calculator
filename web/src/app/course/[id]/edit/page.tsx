@@ -1,10 +1,9 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -98,7 +97,7 @@ export default function EditCoursePage() {
     setAssessments(assessments.filter(a => a.id !== id));
   };
 
-  const updateAssessment = (id: string, field: keyof Assessment, value: any) => {
+  const updateAssessment = (id: string, field: keyof Assessment, value: string | number) => {
     setAssessments(assessments.map(a => 
       a.id === id ? { ...a, [field]: value } : a
     ));
@@ -184,7 +183,7 @@ export default function EditCoursePage() {
                 {totalWeight.toFixed(1)}% total weight
               </Badge>
               {!isWeightValid && (
-                <Info className="h-4 w-4 text-orange-500" title="Total weight should equal 100% for accurate grade calculations" />
+                <Info className="h-4 w-4 text-orange-500" />
               )}
             </div>
             <Button onClick={addAssessment} size="sm" className="bg-accent hover:bg-accent/90 text-white border-accent shadow-sm">

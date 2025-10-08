@@ -38,8 +38,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       message: 'Grades saved successfully',
       grades 
     });
-  } catch (error) {
-    console.error('Error saving grades:', error);
+  } catch {
     return NextResponse.json({ error: 'Failed to save grades' }, { status: 500 });
   }
 }
@@ -68,7 +67,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       grades: courseData.grades || {},
       updatedAt: courseData.updatedAt 
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch grades' }, { status: 500 });
   }
 }

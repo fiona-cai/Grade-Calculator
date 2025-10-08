@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, Grid, Group, NumberInput, Stack, Table, Text, Title, Badge, Loader, ActionIcon } from "@mantine/core";
 import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
@@ -242,7 +242,7 @@ export function Calculator({ title, assessments, categories, courseId }: Props) 
                   </Text>
                 )}
                 <div style={{ width: 260, height: 260 }}>
-                  <Doughnut data={data} options={{ cutout: "70%" as any, maintainAspectRatio: false, plugins: { legend: { position: "bottom" } } }} />
+                  <Doughnut data={data} options={{ cutout: "70%", maintainAspectRatio: false, plugins: { legend: { position: "bottom" } } }} />
                 </div>
               </Stack>
             </Card>
@@ -250,7 +250,7 @@ export function Calculator({ title, assessments, categories, courseId }: Props) 
             <Card withBorder>
               <Stack gap="sm">
                 <Title order={4}>Assessment Weights</Title>
-                <Table size="sm">
+                <Table>
                   <Table.Thead>
                     <Table.Tr>
                       <Table.Th>Assessment</Table.Th>
