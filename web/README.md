@@ -1,62 +1,160 @@
-# Google AI-Powered Grade Calculator
+# Smart Grade Calculators
 
-## 🚀 **Current Status**
+An AI-powered grade calculator that automatically creates personalized grade calculators from course outlines.
 
-The application is now running with **Google Gemini AI** for intelligent course outline parsing. The system uses Google's Gemini 1.5 Flash model with enhanced fallback parsing when needed.
+## Features
 
-## 🔧 **Features**
+- 🔐 **User Authentication**: Secure Google OAuth login
+- 📁 **File Upload**: Support for PDF, HTML, and image files
+- 🤖 **AI Parsing**: Automatic extraction of assessment information
+- 📊 **Grade Tracking**: Real-time grade calculations with progress tracking
+- 💾 **Data Persistence**: Secure cloud storage with Vercel Blob
+- 🎨 **Modern UI**: Beautiful interface built with shadcn/ui
 
-### **Smart Course Outline Parsing**
-- **AI-Powered**: Uses Google Gemini 1.5 Flash for intelligent parsing
-- **Enhanced Fallback**: Sophisticated regex patterns for reliable parsing
-- **Multiple Formats**: Supports PDF, HTML, PNG, JPG files
-- **Auto-Detection**: Automatically identifies quizzes, exams, assignments, projects
+## Tech Stack
 
-### **Dynamic Grade Calculators**
-- **Real-time Calculations**: Live grade updates as you enter scores
-- **Category Grouping**: Organizes assessments by type
-- **Visual Charts**: Doughnut charts showing grade distribution
-- **Weight Validation**: Ensures total weights don't exceed 100%
+- **Frontend**: Next.js 15, React, TypeScript, Tailwind CSS, shadcn/ui
+- **Backend**: Next.js API Routes, Prisma ORM
+- **Database**: PostgreSQL
+- **Authentication**: NextAuth.js with Google OAuth
+- **File Storage**: Vercel Blob
+- **AI**: Google Gemini API (optional)
 
-### **Course Management**
-- **Upload & Parse**: Drag-and-drop course outline uploads
-- **Edit Assessments**: Modify names, categories, weights, and max points
-- **Delete Courses**: Remove courses with confirmation
-- **Persistent Storage**: Courses saved locally in JSON format
+## Deployment to Vercel
 
-## 📊 **Enhanced Pattern Recognition**
+### 1. Prerequisites
 
-The fallback parser now recognizes:
-- **Quiz Patterns**: "Quiz 1: 10%", "Quiz 1 (10%)", "Quiz 1 - 10%"
-- **Exam Patterns**: "Midterm: 30%", "Final Exam: 50%"
-- **Assignment Patterns**: "Assignment 1: 15%"
-- **Project Patterns**: "Project: 20%"
+- Vercel account
+- PostgreSQL database (Vercel Postgres recommended)
+- Google OAuth credentials
+- Vercel Blob storage
 
-## 🔑 **API Key Management**
+### 2. Environment Variables
 
-To enable AI parsing:
-1. Add your Google AI API key to `.env.local`:
+Set these environment variables in your Vercel dashboard:
+
+```bash
+# Database
+DATABASE_URL="postgresql://username:password@host:port/database"
+
+# NextAuth
+NEXTAUTH_URL="https://your-app.vercel.app"
+NEXTAUTH_SECRET="your-secret-key-here"
+
+# Google OAuth
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+
+# Vercel Blob
+BLOB_READ_WRITE_TOKEN="your-vercel-blob-token"
+
+# Google AI (optional)
+GOOGLE_AI_API_KEY="your-google-ai-api-key"
+```
+
+### 3. Database Setup
+
+1. Create a PostgreSQL database
+2. Run Prisma migrations:
+   ```bash
+   npx prisma migrate deploy
    ```
-   GOOGLE_AI_API_KEY=your_api_key_here
+
+### 4. Google OAuth Setup
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing
+3. Enable Google+ API
+4. Create OAuth 2.0 credentials
+5. Add authorized redirect URIs:
+   - `https://your-app.vercel.app/api/auth/callback/google`
+
+### 5. Vercel Blob Setup
+
+1. Install Vercel Blob in your Vercel dashboard
+2. Get your `BLOB_READ_WRITE_TOKEN`
+
+### 6. Deploy
+
+1. Connect your GitHub repository to Vercel
+2. Deploy with the environment variables set
+3. Run database migrations after deployment
+
+## Local Development
+
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
    ```
-2. Ensure you have sufficient API quota
-3. The system will automatically use Google Gemini AI when available
+3. Set up environment variables in `.env.local`
+4. Run database migrations:
+   ```bash
+   npx prisma migrate dev
+   ```
+5. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-## 🎯 **Usage**
+## Project Structure
 
-1. **Upload Course**: Click "Add Course" and upload your course outline
-2. **Auto-Parse**: System extracts assessment information automatically
-3. **Calculate Grades**: Enter your scores and see real-time grade calculations
-4. **Edit if Needed**: Use the edit button to modify assessments
-5. **Track Progress**: Monitor your grade distribution with visual charts
+```
+src/
+├── app/
+│   ├── api/
+│   │   ├── auth/          # NextAuth configuration
+│   │   └── courses/       # Course management API
+│   ├── auth/              # Authentication pages
+│   ├── course/            # Course pages
+│   └── globals.css        # Global styles
+├── components/
+│   ├── ui/                # shadcn/ui components
+│   └── ...                # Custom components
+├── lib/
+│   ├── auth.ts           # NextAuth configuration
+│   ├── db.ts             # Database connection
+│   └── ai-parser.ts      # AI parsing logic
+└── prisma/
+    └── schema.prisma     # Database schema
+```
 
-## 🛠 **Technical Stack**
+## Features in Detail
 
-- **Frontend**: Next.js 15, React 19, TypeScript
-- **UI**: Mantine components with modern design
-- **Charts**: Chart.js with react-chartjs-2
-- **File Processing**: pdf-parse for PDF text extraction
-- **AI**: Google Gemini 1.5 Flash
-- **Storage**: Local file system with JSON files
+### User Authentication
+- Secure Google OAuth integration
+- Session management with NextAuth.js
+- Protected routes and API endpoints
 
-The application is fully functional with Google Gemini AI parsing and enhanced fallback pattern matching.
+### File Management
+- Upload course outlines (PDF, HTML, images)
+- Secure cloud storage with Vercel Blob
+- Automatic file processing and parsing
+
+### AI-Powered Parsing
+- Extract assessment information from course outlines
+- Automatic weight normalization
+- Fallback to regex parsing if AI fails
+
+### Grade Tracking
+- Real-time grade calculations
+- Progress tracking with visual indicators
+- Auto-save functionality
+- Individual assessment management
+
+### Modern UI
+- Responsive design with Tailwind CSS
+- Beautiful components with shadcn/ui
+- Custom accent color (#abcca3)
+- Smooth animations and transitions
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## License
+
+MIT License - see LICENSE file for details

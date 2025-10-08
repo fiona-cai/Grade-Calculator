@@ -1,29 +1,28 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import fs from 'fs';
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '');
 
-export async function parseCourseOutlineWithAI(filePath: string, fileType: string): Promise<any[]> {
+export async function parseCourseOutlineWithAI(file: File): Promise<any[]> {
   try {
     // Check if API key is available
     if (!process.env.GOOGLE_AI_API_KEY) {
       console.log('Google AI API key not found, falling back to simple parsing');
-      return await parseCourseOutlineSimple(filePath, fileType);
+      return await parseCourseOutlineSimple(file);
     }
 
     console.log('Using Google AI API key:', process.env.GOOGLE_AI_API_KEY.substring(0, 10) + '...');
 
     let textContent = '';
     
-    if (fileType === 'application/pdf') {
+    if (file.type === 'application/pdf') {
       // Extract text from PDF
+      const arrayBuffer = await file.arrayBuffer();
       const pdfParse = require('pdf-parse');
-      const dataBuffer = fs.readFileSync(filePath);
-      const data = await pdfParse(dataBuffer);
+      const data = await pdfParse(Buffer.from(arrayBuffer));
       textContent = data.text;
-    } else if (fileType.startsWith('text/html')) {
+    } else if (file.type.startsWith('text/html')) {
       // For HTML files, read the content
-      textContent = fs.readFileSync(filePath, 'utf8');
+      textContent = await file.text();
     } else {
       // For image files, we'll need OCR or ask user to provide text
       throw new Error('Image files require OCR processing. Please provide a PDF or HTML file.');
@@ -33,9 +32,11 @@ export async function parseCourseOutlineWithAI(filePath: string, fileType: strin
       throw new Error('No text content found in the file');
     }
 
+    console.log('Extracted text content length:', textContent.length);
+
     // Use Google Gemini to parse the course outline
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
-    
+
     const prompt = `You are an expert at parsing course outlines and extracting assessment information. 
 
 Extract all assessments (quizzes, assignments, exams, projects, etc.) from the course outline text.
@@ -75,20 +76,20 @@ ${textContent}`;
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
+    
+    console.log('AI Response:', text);
 
-    if (!text) {
-      throw new Error('No response from AI parser');
-    }
-
-    // Clean the response text - remove markdown code blocks if present
+    // Clean the response text
     let cleanedText = text.trim();
+    
+    // Remove markdown code blocks if present
     if (cleanedText.startsWith('```json')) {
       cleanedText = cleanedText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
     } else if (cleanedText.startsWith('```')) {
       cleanedText = cleanedText.replace(/^```\s*/, '').replace(/\s*```$/, '');
     }
 
-    console.log('AI Response:', cleanedText);
+    console.log('Cleaned response:', cleanedText);
 
     // Parse the JSON response
     let assessments;
@@ -96,132 +97,208 @@ ${textContent}`;
       assessments = JSON.parse(cleanedText);
     } catch (parseError) {
       console.error('JSON parsing error:', parseError);
-      console.error('Raw AI response:', text);
-      console.error('Cleaned response:', cleanedText);
+      console.error('Raw response:', text);
       throw new Error(`Failed to parse AI response as JSON: ${parseError}`);
     }
-    
-    // Validate and add IDs
-    const validatedAssessments = assessments.map((assessment: any, index: number) => ({
-      id: `assessment-${index + 1}`,
-      name: assessment.name || `Assessment ${index + 1}`,
-      category: assessment.category || 'Assignments',
-      max: Number(assessment.max) || 100,
-      weight: Number(assessment.weight) || 0
-    }));
 
-    // Normalize weights to ensure they add up to exactly 100%
-    const totalWeight = validatedAssessments.reduce((sum: number, a: any) => sum + a.weight, 0);
-    if (totalWeight > 0 && totalWeight !== 100) {
-      // Scale weights proportionally to total 100%
-      const scaleFactor = 100 / totalWeight;
-      validatedAssessments.forEach((assessment: any) => {
-        assessment.weight = Math.round(assessment.weight * scaleFactor * 100) / 100;
-      });
+    if (!Array.isArray(assessments)) {
+      throw new Error('AI response is not an array');
     }
 
-    return validatedAssessments;
+    // Normalize weights to sum to 100%
+    const totalWeight = assessments.reduce((sum, assessment) => sum + (assessment.weight || 0), 0);
+    if (totalWeight > 0) {
+      const normalizedAssessments = assessments.map(assessment => ({
+        ...assessment,
+        weight: Math.round((assessment.weight / totalWeight) * 100 * 100) / 100 // Round to 2 decimal places
+      }));
+      console.log('Parsed assessments:', normalizedAssessments);
+      return normalizedAssessments;
+    }
+
+    console.log('Parsed assessments:', assessments);
+    return assessments;
 
   } catch (error) {
     console.error('AI parsing error:', error);
-    
-    // Check if it's a quota error and provide helpful message
-    if (error instanceof Error && (error.message.includes('quota') || error.message.includes('limit'))) {
-      console.log('Google AI quota exceeded, falling back to simple parsing');
-    }
-    
-    // Fallback to simple regex parsing
-    return await parseCourseOutlineSimple(filePath, fileType);
+    console.log('Falling back to simple parsing');
+    return await parseCourseOutlineSimple(file);
   }
 }
 
-async function parseCourseOutlineSimple(filePath: string, fileType: string): Promise<any[]> {
-  const assessments = [];
-  
-  if (fileType === 'application/pdf') {
-    try {
+export async function parseCourseOutlineSimple(file: File): Promise<any[]> {
+  try {
+    let textContent = '';
+    
+    if (file.type === 'application/pdf') {
+      // Extract text from PDF
+      const arrayBuffer = await file.arrayBuffer();
       const pdfParse = require('pdf-parse');
-      const dataBuffer = fs.readFileSync(filePath);
-      const data = await pdfParse(dataBuffer);
+      const data = await pdfParse(Buffer.from(arrayBuffer));
+      textContent = data.text;
+    } else if (file.type.startsWith('text/html')) {
+      // For HTML files, read the content
+      textContent = await file.text();
+    } else {
+      // For image files, return default structure
+      return getDefaultAssessments();
+    }
+
+    if (!textContent.trim()) {
+      return getDefaultAssessments();
+    }
+
+    console.log('Using simple parsing for text content');
+
+    // Enhanced regex patterns for different assessment types
+    const patterns = {
+      quiz: /quiz\s*(\d+)/gi,
+      exam: /(midterm|final|exam)\s*(?:exam)?/gi,
+      assignment: /assignment\s*(\d+)|homework\s*(\d+)|hw\s*(\d+)/gi,
+      project: /project\s*(\d+)/gi,
+      lab: /lab\s*(\d+)/gi,
+    };
+
+    const assessments: any[] = [];
+    const foundAssessments = new Set<string>();
+
+    // Find quizzes
+    let quizMatches = textContent.match(patterns.quiz);
+    if (quizMatches) {
+      const quizCount = Math.max(...quizMatches.map(match => {
+        const num = match.match(/\d+/);
+        return num ? parseInt(num[0]) : 0;
+      }));
       
-      const text = data.text;
-      
-      // Enhanced regex patterns to extract assessment information
-      const patterns = [
-        // Quiz patterns: "Quiz 1: 10%", "Quiz 1 (10%)", "Quiz 1 - 10%"
-        { regex: /(?:quiz|assignment|homework)\s*(\d+)\s*[:\-\(]?\s*(\d+(?:\.\d+)?)\s*%/gi, type: 'quiz' },
-        // Exam patterns: "Midterm: 30%", "Final Exam: 50%"
-        { regex: /(midterm|mid-term|final(?:\s+exam)?)\s*[:\-\(]?\s*(\d+(?:\.\d+)?)\s*%/gi, type: 'exam' },
-        // Assignment patterns: "Assignment 1: 15%"
-        { regex: /assignment\s*(\d+)\s*[:\-\(]?\s*(\d+(?:\.\d+)?)\s*%/gi, type: 'assignment' },
-        // Project patterns: "Project: 20%"
-        { regex: /project\s*[:\-\(]?\s*(\d+(?:\.\d+)?)\s*%/gi, type: 'project' }
-      ];
-      
-      let assessmentCount = { quiz: 1, assignment: 1, project: 1 };
-      
-      for (const pattern of patterns) {
-        let match;
-        while ((match = pattern.regex.exec(text)) !== null) {
-          const weight = parseFloat(match[2] || match[1]);
-          let name = '';
-          let category = '';
-          
-          switch (pattern.type) {
-            case 'quiz':
-              name = `Quiz ${assessmentCount.quiz}`;
-              category = 'Quizzes';
-              assessmentCount.quiz++;
-              break;
-            case 'exam':
-              name = match[1].toLowerCase().includes('final') ? 'Final Exam' : 'Midterm Exam';
-              category = match[1].toLowerCase().includes('final') ? 'Final Exam' : 'Midterm';
-              break;
-            case 'assignment':
-              name = `Assignment ${assessmentCount.assignment}`;
-              category = 'Assignments';
-              assessmentCount.assignment++;
-              break;
-            case 'project':
-              name = `Project ${assessmentCount.project}`;
-              category = 'Projects';
-              assessmentCount.project++;
-              break;
-          }
-          
+      for (let i = 1; i <= quizCount; i++) {
+        const assessmentName = `Quiz ${i}`;
+        if (!foundAssessments.has(assessmentName)) {
           assessments.push({
-            id: `${category.toLowerCase().replace(/\s+/g, '-')}-${assessments.length + 1}`,
-            name,
-            category,
+            name: assessmentName,
+            category: 'Quizzes',
             max: 100,
-            weight: weight
+            weight: Math.round((100 / (quizCount + 2)) * 100) / 100 // Distribute weight among quizzes
           });
+          foundAssessments.add(assessmentName);
         }
       }
-      
-    } catch (error) {
-      console.error('Error parsing PDF:', error);
     }
+
+    // Find exams
+    let examMatches = textContent.match(patterns.exam);
+    if (examMatches) {
+      const examTypes = [...new Set(examMatches.map(match => match.toLowerCase().trim()))];
+      
+      examTypes.forEach(examType => {
+        const assessmentName = examType.charAt(0).toUpperCase() + examType.slice(1);
+        if (!foundAssessments.has(assessmentName)) {
+          assessments.push({
+            name: assessmentName,
+            category: 'Exams',
+            max: 100,
+            weight: examType.includes('final') ? 40 : 30
+          });
+          foundAssessments.add(assessmentName);
+        }
+      });
+    }
+
+    // Find assignments
+    let assignmentMatches = textContent.match(patterns.assignment);
+    if (assignmentMatches) {
+      const assignmentCount = Math.max(...assignmentMatches.map(match => {
+        const num = match.match(/\d+/);
+        return num ? parseInt(num[0]) : 0;
+      }));
+      
+      for (let i = 1; i <= assignmentCount; i++) {
+        const assessmentName = `Assignment ${i}`;
+        if (!foundAssessments.has(assessmentName)) {
+          assessments.push({
+            name: assessmentName,
+            category: 'Assignments',
+            max: 100,
+            weight: Math.round((100 / (assignmentCount + 2)) * 100) / 100
+          });
+          foundAssessments.add(assessmentName);
+        }
+      }
+    }
+
+    // Find projects
+    let projectMatches = textContent.match(patterns.project);
+    if (projectMatches) {
+      const projectCount = Math.max(...projectMatches.map(match => {
+        const num = match.match(/\d+/);
+        return num ? parseInt(num[0]) : 0;
+      }));
+      
+      for (let i = 1; i <= projectCount; i++) {
+        const assessmentName = `Project ${i}`;
+        if (!foundAssessments.has(assessmentName)) {
+          assessments.push({
+            name: assessmentName,
+            category: 'Projects',
+            max: 100,
+            weight: Math.round((100 / (projectCount + 2)) * 100) / 100
+          });
+          foundAssessments.add(assessmentName);
+        }
+      }
+    }
+
+    // Find labs
+    let labMatches = textContent.match(patterns.lab);
+    if (labMatches) {
+      const labCount = Math.max(...labMatches.map(match => {
+        const num = match.match(/\d+/);
+        return num ? parseInt(num[0]) : 0;
+      }));
+      
+      for (let i = 1; i <= labCount; i++) {
+        const assessmentName = `Lab ${i}`;
+        if (!foundAssessments.has(assessmentName)) {
+          assessments.push({
+            name: assessmentName,
+            category: 'Labs',
+            max: 100,
+            weight: Math.round((100 / (labCount + 2)) * 100) / 100
+          });
+          foundAssessments.add(assessmentName);
+        }
+      }
+    }
+
+    // If no assessments found, return default structure
+    if (assessments.length === 0) {
+      return getDefaultAssessments();
+    }
+
+    // Normalize weights to sum to 100%
+    const totalWeight = assessments.reduce((sum, assessment) => sum + (assessment.weight || 0), 0);
+    if (totalWeight > 0) {
+      const normalizedAssessments = assessments.map(assessment => ({
+        ...assessment,
+        weight: Math.round((assessment.weight / totalWeight) * 100 * 100) / 100
+      }));
+      return normalizedAssessments;
+    }
+
+    console.log('Simple parsing result:', assessments);
+    return assessments;
+
+  } catch (error) {
+    console.error('Simple parsing error:', error);
+    return getDefaultAssessments();
   }
-  
-  // If no patterns found, create default structure
-  if (assessments.length === 0) {
-    assessments.push(
-      { id: 'quiz-1', name: 'Quiz 1', category: 'Quizzes', max: 100, weight: 10 },
-      { id: 'quiz-2', name: 'Quiz 2', category: 'Quizzes', max: 100, weight: 10 },
-      { id: 'midterm', name: 'Midterm Exam', category: 'Midterm', max: 100, weight: 30 },
-      { id: 'final', name: 'Final Exam', category: 'Final Exam', max: 100, weight: 50 }
-    );
-  }
-  
-  // Normalize weights to ensure they add up to 100%
-  const totalWeight = assessments.reduce((sum, assessment) => sum + assessment.weight, 0);
-  if (totalWeight > 0 && totalWeight !== 100) {
-    const scaleFactor = 100 / totalWeight;
-    assessments.forEach(assessment => {
-      assessment.weight = Math.round(assessment.weight * scaleFactor * 100) / 100;
-    });
-  }
-  
-  return assessments;
+}
+
+function getDefaultAssessments(): any[] {
+  return [
+    { name: 'Quiz 1', category: 'Quizzes', max: 100, weight: 10 },
+    { name: 'Quiz 2', category: 'Quizzes', max: 100, weight: 10 },
+    { name: 'Quiz 3', category: 'Quizzes', max: 100, weight: 10 },
+    { name: 'Midterm Exam', category: 'Exams', max: 100, weight: 30 },
+    { name: 'Final Exam', category: 'Exams', max: 100, weight: 40 }
+  ];
 }

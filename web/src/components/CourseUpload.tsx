@@ -1,7 +1,12 @@
 "use client";
 import { useState, useRef } from 'react';
-import { Button, Card, Group, Text, TextInput, Stack, FileInput, Alert, Progress } from '@mantine/core';
-import { IconUpload, IconFile, IconAlertCircle, IconBrain } from '@tabler/icons-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Progress } from "./ui/progress";
+import { Alert, AlertDescription } from "./ui/alert";
+import { Upload, File, Brain, AlertCircle, Loader2 } from "lucide-react";
 
 interface CourseUploadProps {
   onCourseCreated: (course: any) => void;
@@ -54,7 +59,7 @@ export function CourseUpload({ onCourseCreated }: CourseUploadProps) {
         });
       }, 200);
 
-      setStatusMessage('Analyzing course outline with Google Gemini AI...');
+      setStatusMessage('Analyzing course outline with AI...');
 
       const response = await fetch('/api/courses', {
         method: 'POST',
@@ -108,91 +113,91 @@ export function CourseUpload({ onCourseCreated }: CourseUploadProps) {
   };
 
   return (
-    <Card withBorder padding="lg" radius="md">
-      <Stack gap="md">
-        <Group gap="sm">
-          <IconBrain size={20} color="#3b82f6" />
-          <Text size="lg" fw={600}>Upload Course Outline</Text>
-        </Group>
-        
-        <Text size="sm" c="dimmed">
-          Upload a PDF or HTML course outline and Google Gemini AI will automatically extract assessment information to create your grade calculator.
-        </Text>
-        
-        <TextInput
-          label="Course Name"
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <Label htmlFor="courseName">Course Name</Label>
+        <Input
+          id="courseName"
           placeholder="e.g., MATH 135, CS 101"
           value={courseName}
           onChange={(e) => setCourseName(e.target.value)}
           required
         />
+      </div>
 
-        <div>
-          <Text size="sm" fw={500} mb="xs">Course Outline File</Text>
-          <div
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-            style={{
-              border: '2px dashed #ccc',
-              borderRadius: '8px',
-              padding: '20px',
-              textAlign: 'center',
-              cursor: 'pointer',
-              backgroundColor: file ? '#f0f9ff' : '#fafafa',
-              borderColor: file ? '#3b82f6' : '#ccc',
-            }}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,.png,.jpg,.jpeg,.html,.htm"
-              onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
-              style={{ display: 'none' }}
-            />
-            
-            {file ? (
-              <Group justify="center" gap="sm">
-                <IconFile size={24} color="#3b82f6" />
-                <Text c="blue" fw={500}>{file.name}</Text>
-              </Group>
-            ) : (
-              <Group justify="center" gap="sm">
-                <IconUpload size={24} color="#666" />
-                <Text c="dimmed">
-                  Drag and drop your course outline here, or click to browse
-                </Text>
-              </Group>
-            )}
-          </div>
-          <Text size="xs" c="dimmed" mt="xs">
-            Supported formats: PDF, PNG, JPG, HTML
-          </Text>
-        </div>
-
-        {isUploading && (
-          <div>
-            <Text size="sm" mb="xs">{statusMessage}</Text>
-            <Progress value={uploadProgress} animated />
-          </div>
-        )}
-
-        {error && (
-          <Alert icon={<IconAlertCircle size={16} />} color="red" variant="light">
-            {error}
-          </Alert>
-        )}
-
-        <Button
-          onClick={handleSubmit}
-          loading={isUploading}
-          disabled={!file || !courseName.trim()}
-          fullWidth
-          leftSection={!isUploading ? <IconBrain size={16} /> : undefined}
+      <div className="space-y-2">
+        <Label>Course Outline File</Label>
+        <div
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          className={`
+            border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
+            ${file 
+              ? 'border-accent bg-accent/10 text-accent' 
+              : 'border-gray-300 bg-gray-50 text-gray-600 hover:border-gray-400 hover:bg-gray-100'
+            }
+          `}
+          onClick={() => fileInputRef.current?.click()}
         >
-          {isUploading ? 'Processing with Google Gemini...' : 'Create Grade Calculator'}
-        </Button>
-      </Stack>
-    </Card>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.png,.jpg,.jpeg,.html,.htm"
+            onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
+            className="hidden"
+          />
+          
+          {file ? (
+            <div className="flex items-center justify-center gap-2">
+              <File className="h-6 w-6 text-accent" />
+              <span className="font-medium">{file.name}</span>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-2">
+              <Upload className="h-6 w-6" />
+              <span>Drag and drop your course outline here, or click to browse</span>
+            </div>
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Supported formats: PDF, PNG, JPG, HTML
+        </p>
+      </div>
+
+      {isUploading && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm">{statusMessage}</span>
+          </div>
+          <Progress value={uploadProgress} className="h-2" />
+        </div>
+      )}
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      <Button
+        onClick={handleSubmit}
+        disabled={!file || !courseName.trim() || isUploading}
+        className="w-full bg-accent hover:bg-accent/90 text-white border-accent shadow-sm"
+      >
+        {isUploading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Processing with AI...
+          </>
+        ) : (
+          <>
+            <Brain className="mr-2 h-4 w-4" />
+            Create Grade Calculator
+          </>
+        )}
+      </Button>
+    </div>
   );
 }

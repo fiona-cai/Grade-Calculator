@@ -1,7 +1,11 @@
 "use client";
-import { useState, useEffect } from 'react';
-import { Card, Grid, Group, Text, Title, Button, Stack, Badge, Menu, ActionIcon, Modal } from '@mantine/core';
-import { IconDots, IconTrash, IconEdit, IconCalendar } from '@tabler/icons-react';
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
+import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import { MoreHorizontal, Trash2, Edit, Calendar, Calculator } from "lucide-react";
 import Link from 'next/link';
 
 interface Course {
@@ -58,97 +62,86 @@ export function CourseList({ courses, onCourseDeleted }: CourseListProps) {
 
   if (courses.length === 0) {
     return (
-      <Card withBorder padding="lg" radius="md">
-        <Stack align="center" gap="md">
-          <Text size="lg" c="dimmed">No courses uploaded yet</Text>
-          <Text size="sm" c="dimmed">Upload a course outline to get started</Text>
-        </Stack>
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <div className="text-center space-y-2">
+            <h3 className="text-lg font-medium text-muted-foreground">No courses uploaded yet</h3>
+            <p className="text-sm text-muted-foreground">Upload a course outline to get started</p>
+          </div>
+        </CardContent>
       </Card>
     );
   }
 
   return (
     <>
-      <Grid>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {courses.map((course) => (
-          <Grid.Col key={course.id} span={{ base: 12, md: 6, lg: 4 }}>
-            <Card withBorder padding="lg" radius="md" h="100%">
-              <Stack gap="md" h="100%">
-                <Group justify="space-between" align="flex-start">
-                  <Title order={4} style={{ flex: 1 }}>
-                    {course.name}
-                  </Title>
-                  <Menu shadow="md" width={200}>
-                    <Menu.Target>
-                      <ActionIcon variant="subtle" color="gray">
-                        <IconDots size={16} />
-                      </ActionIcon>
-                    </Menu.Target>
-                    <Menu.Dropdown>
-                      <Menu.Item
-                        leftSection={<IconEdit size={14} />}
-                        component={Link}
-                        href={`/course/${course.id}/edit`}
-                      >
+          <Card key={course.id} className="h-full">
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between">
+                <CardTitle className="text-lg leading-tight">{course.name}</CardTitle>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                      <Link href={`/course/${course.id}/edit`} className="flex items-center">
+                        <Edit className="mr-2 h-4 w-4" />
                         Edit
-                      </Menu.Item>
-                      <Menu.Item
-                        leftSection={<IconTrash size={14} />}
-                        color="red"
-                        onClick={() => openDeleteModal(course.id)}
-                      >
-                        Delete
-                      </Menu.Item>
-                    </Menu.Dropdown>
-                  </Menu>
-                </Group>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => openDeleteModal(course.id)}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <Badge variant="secondary">
+                  {course.assessments.length} assessments
+                </Badge>
+                <Badge variant="outline">
+                  {getTotalWeight(course.assessments).toFixed(0)}% total
+                </Badge>
+              </div>
 
-                <Group gap="xs">
-                  <Badge variant="light" color="blue">
-                    {course.assessments.length} assessments
-                  </Badge>
-                  <Badge variant="light" color="green">
-                    {getTotalWeight(course.assessments).toFixed(0)}% total
-                  </Badge>
-                </Group>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Calendar className="h-4 w-4" />
+                <span>Created {formatDate(course.createdAt)}</span>
+              </div>
 
-                <Group gap="xs" c="dimmed">
-                  <IconCalendar size={14} />
-                  <Text size="sm">
-                    Created {formatDate(course.createdAt)}
-                  </Text>
-                </Group>
-
-                <Button
-                  component={Link}
-                  href={`/course/${course.id}`}
-                  fullWidth
-                  mt="auto"
-                >
+              <Button asChild className="w-full bg-accent hover:bg-accent/90 text-white border-accent shadow-sm">
+                <Link href={`/course/${course.id}`} className="flex items-center gap-2">
+                  <Calculator className="h-4 w-4" />
                   Open Calculator
-                </Button>
-              </Stack>
-            </Card>
-          </Grid.Col>
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
         ))}
-      </Grid>
+      </div>
 
-      <Modal
-        opened={deleteModalOpen}
-        onClose={() => {
-          setDeleteModalOpen(false);
-          setCourseToDelete(null);
-        }}
-        title="Delete Course"
-        centered
-      >
-        <Stack gap="md">
-          <Text>
-            Are you sure you want to delete this course? This action cannot be undone.
-          </Text>
-          <Group justify="flex-end" gap="sm">
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Course</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this course? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
             <Button
-              variant="subtle"
+              variant="outline"
               onClick={() => {
                 setDeleteModalOpen(false);
                 setCourseToDelete(null);
@@ -157,14 +150,14 @@ export function CourseList({ courses, onCourseDeleted }: CourseListProps) {
               Cancel
             </Button>
             <Button
-              color="red"
+              variant="destructive"
               onClick={() => courseToDelete && handleDelete(courseToDelete)}
             >
               Delete
             </Button>
-          </Group>
-        </Stack>
-      </Modal>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

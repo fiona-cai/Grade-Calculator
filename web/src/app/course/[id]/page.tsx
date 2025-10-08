@@ -1,9 +1,12 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Stack, Title, Text, Alert, Loader, Center, Button, Group, Badge } from '@mantine/core';
-import { IconAlertCircle, IconEdit, IconBrain } from '@tabler/icons-react';
-import { Calculator, Assessment } from '@/components/Calculator';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CalculatorShadcn as Calculator, Assessment } from '@/components/CalculatorShadcn';
+import { Brain, Edit, AlertCircle, Loader2 } from "lucide-react";
 import Link from 'next/link';
 
 interface Course {
@@ -48,27 +51,29 @@ export default function CoursePage() {
 
   if (loading) {
     return (
-      <Center h={400}>
-        <Stack align="center" gap="md">
-          <Loader size="lg" />
-          <Text c="dimmed">Loading course...</Text>
-        </Stack>
-      </Center>
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+          <p className="text-muted-foreground">Loading course...</p>
+        </div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Alert icon={<IconAlertCircle size={16} />} color="red" variant="light">
-        {error}
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>{error}</AlertDescription>
       </Alert>
     );
   }
 
   if (!course) {
     return (
-      <Alert icon={<IconAlertCircle size={16} />} color="red" variant="light">
-        Course not found
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>Course not found</AlertDescription>
       </Alert>
     );
   }
@@ -78,50 +83,57 @@ export default function CoursePage() {
   const totalWeight = course.assessments.reduce((sum, a) => sum + a.weight, 0);
 
   return (
-    <Stack gap="xl">
-      <Group justify="space-between" align="flex-start">
-        <div>
-          <Title order={2}>{course.name} Grade Calculator</Title>
-          <Text c="dimmed" size="sm">
-            Created {new Date(course.createdAt).toLocaleDateString()}
-          </Text>
-          <Group gap="xs" mt="xs">
-            <Badge variant="light" color="blue" leftSection={<IconBrain size={12} />}>
-              AI Generated
-            </Badge>
-            <Badge variant="light" color="green">
-              {course.assessments.length} assessments
-            </Badge>
-            <Badge variant="light" color="orange">
-              {totalWeight.toFixed(0)}% total weight
-            </Badge>
-          </Group>
-        </div>
-        <Button
-          component={Link}
-          href={`/course/${courseId}/edit`}
-          leftSection={<IconEdit size={16} />}
-          variant="outline"
-        >
-          Edit Assessments
-        </Button>
-      </Group>
+    <div className="space-y-6">
+      {/* Header Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl">{course.name} Grade Calculator</CardTitle>
+              <CardDescription>
+                Created {new Date(course.createdAt).toLocaleDateString()}
+              </CardDescription>
+              <div className="flex gap-2 mt-2">
+                <Badge className="flex items-center gap-1 bg-accent text-white">
+                  <Brain className="h-3 w-3" />
+                  AI Generated
+                </Badge>
+                <Badge variant="outline">
+                  {course.assessments.length} assessments
+                </Badge>
+                <Badge variant="outline">
+                  {totalWeight.toFixed(0)}% total weight
+                </Badge>
+              </div>
+            </div>
+            <Button asChild className="bg-accent hover:bg-accent/90 text-white border-accent shadow-sm">
+              <Link href={`/course/${courseId}/edit`} className="flex items-center gap-2">
+                <Edit className="h-4 w-4" />
+                Edit Assessments
+              </Link>
+            </Button>
+          </div>
+        </CardHeader>
+      </Card>
 
+      {/* Weight Warning */}
       {totalWeight !== 100 && (
-        <Alert color="yellow" variant="light">
-          <Text size="sm">
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
             <strong>Note:</strong> Total weight is {totalWeight.toFixed(1)}%. 
             You may want to adjust the weights to equal 100% for accurate grade calculations.
-          </Text>
+          </AlertDescription>
         </Alert>
       )}
 
+      {/* Calculator */}
       <Calculator 
         title=""
         assessments={course.assessments}
         categories={categories}
         courseId={courseId}
       />
-    </Stack>
+    </div>
   );
 }

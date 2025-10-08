@@ -1,27 +1,16 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { 
-  Stack, 
-  Title, 
-  Text, 
-  Alert, 
-  Loader, 
-  Center, 
-  Button, 
-  Group, 
-  Card, 
-  TextInput, 
-  NumberInput, 
-  Select,
-  ActionIcon,
-  Table,
-  Badge,
-  Divider,
-  Tooltip
-} from '@mantine/core';
-import { IconAlertCircle, IconPlus, IconTrash, IconArrowLeft, IconBrain, IconInfoCircle } from '@tabler/icons-react';
-import { Assessment } from '@/components/Calculator';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../../../components/ui/card";
+import { Button } from "../../../../../components/ui/button";
+import { Input } from "../../../../../components/ui/input";
+import { Label } from "../../../../../components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../../../components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../../../components/ui/table";
+import { Badge } from "../../../../../components/ui/badge";
+import { Alert, AlertDescription } from "../../../../../components/ui/alert";
+import { ArrowLeft, Plus, Trash2, Brain, Info, Loader2 } from "lucide-react";
+import { Assessment } from '../../../../components/CalculatorShadcn';
 
 interface Course {
   id: string;
@@ -67,27 +56,6 @@ export default function EditCoursePage() {
     }
   }, [courseId]);
 
-  const addAssessment = () => {
-    const newAssessment: Assessment = {
-      id: `assessment-${Date.now()}`,
-      name: 'New Assessment',
-      category: 'Assignments',
-      max: 100,
-      weight: 10
-    };
-    setAssessments(prev => [...prev, newAssessment]);
-  };
-
-  const removeAssessment = (id: string) => {
-    setAssessments(prev => prev.filter(a => a.id !== id));
-  };
-
-  const updateAssessment = (id: string, field: keyof Assessment, value: any) => {
-    setAssessments(prev => prev.map(a => 
-      a.id === id ? { ...a, [field]: value } : a
-    ));
-  };
-
   const saveCourse = async () => {
     if (!course) return;
     
@@ -115,205 +83,220 @@ export default function EditCoursePage() {
     }
   };
 
+  const addAssessment = () => {
+    const newAssessment: Assessment = {
+      id: `assessment-${Date.now()}`,
+      name: `Assessment ${assessments.length + 1}`,
+      category: 'Assignments',
+      max: 100,
+      weight: 10
+    };
+    setAssessments([...assessments, newAssessment]);
+  };
+
+  const removeAssessment = (id: string) => {
+    setAssessments(assessments.filter(a => a.id !== id));
+  };
+
+  const updateAssessment = (id: string, field: keyof Assessment, value: any) => {
+    setAssessments(assessments.map(a => 
+      a.id === id ? { ...a, [field]: value } : a
+    ));
+  };
+
   if (loading) {
     return (
-      <Center h={400}>
-        <Stack align="center" gap="md">
-          <Loader size="lg" />
-          <Text c="dimmed">Loading course...</Text>
-        </Stack>
-      </Center>
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+          <p className="text-muted-foreground">Loading course...</p>
+        </div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Alert icon={<IconAlertCircle size={16} />} color="red" variant="light">
-        {error}
+      <Alert variant="destructive">
+        <AlertDescription>{error}</AlertDescription>
       </Alert>
     );
   }
 
   if (!course) {
     return (
-      <Alert icon={<IconAlertCircle size={16} />} color="red" variant="light">
-        Course not found
+      <Alert variant="destructive">
+        <AlertDescription>Course not found</AlertDescription>
       </Alert>
     );
   }
 
   const categories = Array.from(new Set(assessments.map(a => a.category)));
-
-  const getTotalWeight = (assessments: any[]) => {
-    return assessments.reduce((sum, assessment) => sum + assessment.weight, 0);
-  };
-
-  const totalWeight = getTotalWeight(assessments);
+  const totalWeight = assessments.reduce((sum, assessment) => sum + assessment.weight, 0);
   const isWeightValid = totalWeight === 100;
 
   return (
-    <Stack gap="xl">
-      <Group justify="space-between" align="center">
-        <Group gap="md">
-          <ActionIcon
-            variant="subtle"
-            onClick={() => router.back()}
-          >
-            <IconArrowLeft size={16} />
-          </ActionIcon>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="sm" onClick={() => router.back()}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
           <div>
-            <Title order={2}>Edit {course.name}</Title>
-            <Text c="dimmed">Modify assessments and weights</Text>
+            <h1 className="text-2xl font-bold">Edit {course.name}</h1>
+            <p className="text-muted-foreground">Modify assessments and weights</p>
           </div>
-        </Group>
-        <Group gap="sm">
-          <Button variant="subtle" onClick={() => router.back()}>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => router.back()}>
             Cancel
           </Button>
-          <Button onClick={saveCourse} loading={saving} disabled={!isWeightValid}>
-            Save Changes
+          <Button onClick={saveCourse} disabled={!isWeightValid || saving} className="bg-accent hover:bg-accent/90 text-white border-accent shadow-sm">
+            {saving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              'Save Changes'
+            )}
           </Button>
-        </Group>
-      </Group>
+        </div>
+      </div>
 
-      <Alert color="blue" variant="light" icon={<IconBrain size={16} />}>
-        <Text size="sm">
+      {/* AI Info Alert */}
+      <Alert>
+        <Brain className="h-4 w-4" />
+        <AlertDescription>
           <strong>AI-Generated Assessments:</strong> These assessments were automatically extracted from your course outline. 
           You can edit names, categories, weights, and maximum points to match your actual course requirements.
-        </Text>
+        </AlertDescription>
       </Alert>
 
-      <Card withBorder padding="lg">
-        <Stack gap="md">
-          <Group justify="space-between" align="center">
-            <Group gap="sm">
-              <Title order={4}>Assessments</Title>
-              <Badge variant="light" color={isWeightValid ? "green" : "orange"}>
+      {/* Assessments Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CardTitle>Assessments</CardTitle>
+              <Badge variant={isWeightValid ? "default" : "secondary"}>
                 {totalWeight.toFixed(1)}% total weight
               </Badge>
               {!isWeightValid && (
-                <Tooltip label="Total weight should equal 100% for accurate grade calculations">
-                  <IconInfoCircle size={16} color="orange" />
-                </Tooltip>
+                <Info className="h-4 w-4 text-orange-500" title="Total weight should equal 100% for accurate grade calculations" />
               )}
-            </Group>
-            <Button
-              leftSection={<IconPlus size={16} />}
-              onClick={addAssessment}
-              size="sm"
-            >
+            </div>
+            <Button onClick={addAssessment} size="sm" className="bg-accent hover:bg-accent/90 text-white border-accent shadow-sm">
+              <Plus className="mr-2 h-4 w-4" />
               Add Assessment
             </Button>
-          </Group>
-
+          </div>
+        </CardHeader>
+        <CardContent>
           {!isWeightValid && (
-            <Alert color="yellow" variant="light">
-              <Text size="sm">
+            <Alert className="mb-4">
+              <AlertDescription>
                 <strong>Weight Adjustment Needed:</strong> Total weight is {totalWeight.toFixed(1)}%. 
                 Adjust individual weights so they add up to 100% for accurate grade calculations.
-              </Text>
+              </AlertDescription>
             </Alert>
           )}
 
           <Table>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Name</Table.Th>
-                <Table.Th>Category</Table.Th>
-                <Table.Th>Max Points</Table.Th>
-                <Table.Th>Weight (%)</Table.Th>
-                <Table.Th style={{ width: 60 }}></Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Max Points</TableHead>
+                <TableHead>Weight (%)</TableHead>
+                <TableHead className="w-16"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {assessments.map((assessment) => (
-                <Table.Tr key={assessment.id}>
-                  <Table.Td>
-                    <TextInput
+                <TableRow key={assessment.id}>
+                  <TableCell>
+                    <Input
                       value={assessment.name}
                       onChange={(e) => updateAssessment(assessment.id, 'name', e.target.value)}
-                      size="sm"
                       placeholder="Assessment name"
                     />
-                  </Table.Td>
-                  <Table.Td>
+                  </TableCell>
+                  <TableCell>
                     <Select
                       value={assessment.category}
-                      onChange={(value) => updateAssessment(assessment.id, 'category', value || '')}
-                      data={categories}
-                      searchable
-                      creatable
-                      getCreateLabel={(query) => `+ Create ${query}`}
-                      onCreate={(query) => {
-                        const newCategory = query;
-                        setAssessments(prev => prev.map(a => 
-                          a.id === assessment.id ? { ...a, category: newCategory } : a
-                        ));
-                        return newCategory;
-                      }}
-                      size="sm"
-                      placeholder="Category"
-                    />
-                  </Table.Td>
-                  <Table.Td>
-                    <NumberInput
+                      onValueChange={(value) => updateAssessment(assessment.id, 'category', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="new">+ Create new category</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="number"
                       value={assessment.max}
-                      onChange={(value) => updateAssessment(assessment.id, 'max', Number(value))}
+                      onChange={(e) => updateAssessment(assessment.id, 'max', Number(e.target.value))}
                       min={1}
-                      size="sm"
                       placeholder="Max points"
                     />
-                  </Table.Td>
-                  <Table.Td>
-                    <NumberInput
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="number"
                       value={assessment.weight}
-                      onChange={(value) => updateAssessment(assessment.id, 'weight', Number(value))}
+                      onChange={(e) => updateAssessment(assessment.id, 'weight', Number(e.target.value))}
                       min={0}
                       max={100}
-                      size="sm"
                       placeholder="Weight %"
                     />
-                  </Table.Td>
-                  <Table.Td>
-                    <ActionIcon
-                      color="red"
-                      variant="subtle"
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => removeAssessment(assessment.id)}
+                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                     >
-                      <IconTrash size={16} />
-                    </ActionIcon>
-                  </Table.Td>
-                </Table.Tr>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
               ))}
-            </Table.Tbody>
+            </TableBody>
           </Table>
 
-          <Divider />
-          
-          <Group justify="space-between" align="center">
-            <Text size="sm" c="dimmed">
+          <div className="flex items-center justify-between pt-4 border-t">
+            <p className="text-sm text-muted-foreground">
               Total: {assessments.length} assessments, {totalWeight.toFixed(1)}% weight
-            </Text>
-            <Group gap="sm">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  // Normalize weights to 100%
-                  const scaleFactor = 100 / totalWeight;
-                  setAssessments(prev => prev.map(a => ({
-                    ...a,
-                    weight: Math.round(a.weight * scaleFactor * 100) / 100
-                  })));
-                }}
-                disabled={totalWeight === 0}
-              >
-                Normalize to 100%
-              </Button>
-            </Group>
-          </Group>
-        </Stack>
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                // Normalize weights to 100%
+                const scaleFactor = 100 / totalWeight;
+                setAssessments(prev => prev.map(a => ({
+                  ...a,
+                  weight: Math.round(a.weight * scaleFactor * 100) / 100
+                })));
+              }}
+              disabled={totalWeight === 0}
+            >
+              Normalize to 100%
+            </Button>
+          </div>
+        </CardContent>
       </Card>
-    </Stack>
+    </div>
   );
 }
